@@ -1,37 +1,31 @@
 package edu.tcu.cs.hogwartsartifactsonline.wizard;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import edu.tcu.cs.hogwartsartifactsonline.ControllerTestConfig;
 import edu.tcu.cs.hogwartsartifactsonline.artifact.Artifact;
 import edu.tcu.cs.hogwartsartifactsonline.system.StatusCode;
 import edu.tcu.cs.hogwartsartifactsonline.system.exception.ObjectNotFoundException;
 import edu.tcu.cs.hogwartsartifactsonline.wizard.dto.WizardDto;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static edu.tcu.cs.hogwartsartifactsonline.wizard.WizardUtils.generateWizard;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@ActiveProfiles("test")
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
-class WizardControllerTest {
+class WizardControllerTest extends ControllerTestConfig{
 
     @Autowired
     MockMvc mockMvc;
@@ -42,7 +36,7 @@ class WizardControllerTest {
     @Value("${api.endpoint.base-url}/wizards")
     String BASE_URL;
 
-    List<Wizard> wizards = new ArrayList<>();
+    final List<Wizard> wizards = new ArrayList<>();
 
     @Autowired
     ObjectMapper objectMapper;
@@ -54,10 +48,6 @@ class WizardControllerTest {
                 generateWizard(2, "Albus Dumbledore"),
                 generateWizard(3, "Hermione Granger")
         ));
-    }
-
-    @AfterEach
-    void tearDown() {
     }
 
     @Test

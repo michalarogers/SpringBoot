@@ -1,5 +1,6 @@
 package edu.tcu.cs.hogwartsartifactsonline.artifact;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sun.net.httpserver.Authenticator;
 import edu.tcu.cs.hogwartsartifactsonline.artifact.converter.ArtifactDtoToArtifactConverter;
 import edu.tcu.cs.hogwartsartifactsonline.artifact.converter.ArtifactToArtifactDtoConverter;
@@ -7,10 +8,13 @@ import edu.tcu.cs.hogwartsartifactsonline.artifact.dto.ArtifactDto;
 import edu.tcu.cs.hogwartsartifactsonline.system.Result;
 import edu.tcu.cs.hogwartsartifactsonline.system.StatusCode;
 import jdk.jshell.Snippet;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,14 +38,12 @@ public class ArtifactController {
         return new Result(true, StatusCode.SUCCESS, "Find one success", artifactDto);
     }
     @GetMapping
-    public Result findAllArtifacts(){
-        List<Artifact> foundArtifacts = this.artifactService.findAll();
+    public Result findAllArtifacts(Pageable pageable){
+        Page<Artifact> artifactPage = this.artifactService.findAll(pageable);
         //Convert foundArtifacts to a list of artifactDtos
-        List <ArtifactDto> artifactDtos = foundArtifacts.stream()
-                .map(foundArtifact ->
-                        this.artifactToArtifactDtoConverter.convert(foundArtifact))
-                .collect(Collectors.toList());
-        return new Result(true, StatusCode.SUCCESS, "Find all success", artifactDtos);
+        Page<ArtifactDto> artifactDtoPage = artifactPage
+                .map(this.artifactToArtifactDtoConverter::convert);
+        return new Result(true, StatusCode.SUCCESS, "Find all success", artifactDtoPage);
     }
 
     @PostMapping
@@ -55,7 +57,7 @@ public class ArtifactController {
     @PutMapping("/{artifactId}")
     public Result updateArtifact(@PathVariable String artifactId, @Validated @RequestBody ArtifactDto artifactDto){
         Artifact update = this.artifactDtoToArtifactConverter.convert(artifactDto);
-        Artifact updatedArtifact = this.artifactService.update(artifactId, update);
+        Artifact updatedArtifact = this.artifactService.update(artifactId, Objects.requireNonNull(update));
         ArtifactDto updatedArtifactDto = this.artifactToArtifactDtoConverter.convert(updatedArtifact);
         return new Result(true, StatusCode.SUCCESS, "Update success", updatedArtifactDto);
     }
@@ -63,5 +65,14 @@ public class ArtifactController {
     public Result deleteArtifact(@PathVariable String artifactId){
         this.artifactService.delete(artifactId);
         return new Result(true, StatusCode.SUCCESS, "Delete success");
+    }
+
+    @GetMapping("/summary")
+    public Result summarizeArtifacts() throws JsonProcessingException{
+        var foundArtifacts = this.artifactService.findAll();
+        var artifactsDtos = foundArtifacts.stream().map(artifactToArtifactDtoConverter::convert).toList();
+
+        String artifactsSummary = this.artifactService.summarize(artifactsDtos);
+        return new Result(true, StatusCode.SUCCESS, "Summarize success", artifactsSummary);
     }
 }
