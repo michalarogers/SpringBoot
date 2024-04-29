@@ -1,14 +1,12 @@
 package edu.tcu.cs.hogwartsartifactsonline.wizard;
 
+import edu.tcu.cs.hogwartsartifactsonline.ServiceTestConfig;
 import edu.tcu.cs.hogwartsartifactsonline.system.exception.ObjectNotFoundException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-public class WizardServiceTest {
+public class WizardServiceTest extends ServiceTestConfig{
 
     @Mock
     WizardRepository wizardRepository;
@@ -49,11 +46,6 @@ public class WizardServiceTest {
         this.wizards.add(w1);
         this.wizards.add(w2);
         this.wizards.add(w3);
-    }
-
-    @AfterEach
-    void tearDown(){
-
     }
 
     @Test

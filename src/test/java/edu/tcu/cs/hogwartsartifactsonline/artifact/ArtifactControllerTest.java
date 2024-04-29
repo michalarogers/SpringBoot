@@ -1,22 +1,26 @@
 package edu.tcu.cs.hogwartsartifactsonline.artifact;
 
+import edu.tcu.cs.hogwartsartifactsonline.ControllerTestConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.tcu.cs.hogwartsartifactsonline.artifact.dto.ArtifactDto;
 import edu.tcu.cs.hogwartsartifactsonline.system.StatusCode;
 import edu.tcu.cs.hogwartsartifactsonline.system.exception.ObjectNotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
 
 import static edu.tcu.cs.hogwartsartifactsonline.artifact.ArtifactUtils.generateArtifact;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,10 +37,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@ActiveProfiles("test")
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
-class ArtifactControllerTest {
+
+class ArtifactControllerTest extends ControllerTestConfig{
 
     @Autowired
     MockMvc mockMvc;
@@ -76,10 +78,6 @@ class ArtifactControllerTest {
         );
     }
 
-    @AfterEach
-    void tearDown() {
-    }
-
     @Test
     void testFindArtifactByIdSuccess() throws Exception {
         // Given
@@ -117,19 +115,24 @@ class ArtifactControllerTest {
     @Test
     void testFindAllArtifactsSuccess() throws Exception {
         // Given
-        when(artifactService.findAll())
-                .thenReturn(artifacts);
+        Pageable pageable = PageRequest.of(0, 20);
+        PageImpl<Artifact> artifactPage = new PageImpl<>(this.artifacts, pageable, this.artifacts.size());
+        given(this.artifactService.findAll(Mockito.any(Pageable.class))).willReturn(artifactPage);
 
-        // When - Then
-        this.mockMvc.perform(get(BASE_URL).accept(MediaType.APPLICATION_JSON))
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("page", "0");
+        requestParams.add("size", "20");
+
+        // When and then
+        this.mockMvc.perform(get(this.BASE_URL + "/artifacts").accept(MediaType.APPLICATION_JSON).params(requestParams))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
-                .andExpect(jsonPath("$.message").value("Find all success"))
-                .andExpect(jsonPath("$.data", Matchers.hasSize(this.artifacts.size())))
-                .andExpect(jsonPath("$.data[0].id").value(this.artifacts.get(0).getId()))
-                .andExpect(jsonPath("$.data[0].name").value(this.artifacts.get(0).getName()))
-                .andExpect(jsonPath("$.data[0].description").value(this.artifacts.get(0).getDescription()))
-                .andExpect(jsonPath("$.data[0].imageUrl").value(this.artifacts.get(0).getImageUrl()));
+                .andExpect(jsonPath("$.message").value("Find All Success"))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(this.artifacts.size())))
+                .andExpect(jsonPath("$.data.content[0].id").value("1250808601744904191"))
+                .andExpect(jsonPath("$.data.content[0].name").value("Deluminator"))
+                .andExpect(jsonPath("$.data.content[1].id").value("1250808601744904192"))
+                .andExpect(jsonPath("$.data.content[1].name").value("Invisibility Cloak"));
     }
 
     @Test
@@ -247,5 +250,20 @@ class ArtifactControllerTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND))
                 .andExpect(jsonPath("$.message").value("Could not find Artifact with Id " + artifactId))
                 .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @Test
+    void testSummarizeArtifactsSuccess() throws Exception {
+        // Given
+        when(this.artifactService.summarize(anyList()))
+                .thenReturn("The summary includes six artifacts ...");
+
+        // When - Then
+        this.mockMvc.perform(
+                        get(BASE_URL + "/" + "summary").accept(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Summarize success"))
+                .andExpect(jsonPath("$.data").value("The summary includes six artifacts ..."));
     }
 }
